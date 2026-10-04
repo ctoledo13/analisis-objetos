@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Análisis de objetos · Tecnología y Digitalización 3º ESO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#17263F; --soft:#4B5B73; --paper:#EEF4F4; --grid:#D3E2E2; --line:#CFD8E3;
+  --formal:#2F5BEA;    --formal-bg:#E8EEFE;
+  --tecnico:#C2410C;   --tecnico-bg:#FDEBE1;
+  --funcional:#0B7A5A; --funcional-bg:#DFF4EC;
+  --social:#9C2F78;    --social-bg:#F7E4F0;
+  --plastico:#CFDFFF; --metal:#E1E5EA; --tinta:#2B3F8F;
+  --radius:6px;
+  --titulos:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{
+  margin:0;color:var(--ink);
+  font:400 1.0625rem/1.65 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+h1,h2,h3{font-family:var(--titulos);line-height:1.1;margin:0}
+h1{font-size:clamp(2.6rem,9vw,4.8rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.7rem,5vw,2.4rem);font-weight:800}
+h3{font-size:1.25rem;font-weight:700;margin:2rem 0 .6rem}
+p{margin:.7rem 0}
+a{color:var(--formal)}
+:focus-visible{outline:3px solid var(--tecnico);outline-offset:2px}
+
+.hoja{max-width:960px;margin:0 auto;background:#fff;border-inline:2px solid var(--ink);min-height:100vh}
+
+/* Navegación */
+.nav{position:sticky;top:0;z-index:20;background:#fff;border-bottom:2px solid var(--ink);
+  display:flex;align-items:center;gap:.2rem;padding:.35rem .8rem;overflow-x:auto;white-space:nowrap}
+.nav a{color:var(--ink);text-decoration:none;font-weight:700;font-size:.95rem;padding:.4rem .6rem;border-radius:var(--radius);display:inline-flex;align-items:center;gap:.4rem}
+.nav a:hover{background:var(--paper)}
+.nav a::before{content:"";width:.7rem;height:.7rem;border-radius:50%;background:var(--c,var(--ink))}
+.nav a.f{--c:var(--formal)} .nav a.t{--c:var(--tecnico)} .nav a.u{--c:var(--funcional)} .nav a.s{--c:var(--social)}
+.nav a.ir{margin-left:auto;background:var(--ink);color:#fff}
+.nav a.ir::before{display:none}
+.nav a.ir:hover{background:var(--formal)}
+
+/* Portada */
+.portada{padding:2.2rem 1.5rem 1rem}
+.portada .sub{max-width:36rem;color:var(--soft);font-size:1.15rem;margin-top:1rem}
+
+/* Widgets */
+.widget{border:2px solid var(--ink);margin:1.3rem 0;background:#fff}
+.widget .barra{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;padding:.6rem .8rem;border-bottom:2px solid var(--ink);background:var(--paper)}
+.btn{font:700 1rem "Atkinson Hyperlegible",system-ui,sans-serif;border:2px solid var(--ink);background:#fff;color:var(--ink);padding:.45rem .9rem;border-radius:var(--radius);cursor:pointer}
+.btn:hover{background:var(--ink);color:#fff}
+.btn.p{background:var(--ink);color:#fff}
+.btn.p:hover{background:var(--formal);border-color:var(--formal)}
+.leyenda{display:flex;gap:.9rem;margin-left:auto;font-size:.9rem;color:var(--soft)}
+.leyenda span::before{content:"";display:inline-block;width:.9rem;height:.9rem;border:2px solid var(--ink);margin-right:.35rem;vertical-align:-.12rem;background:var(--sw)}
+.panel{padding:1rem}
+
+/* Despiece */
+#pen{display:block;width:100%;height:auto}
+.pieza{cursor:pointer;outline:none;transition:transform .8s cubic-bezier(.22,.8,.2,1)}
+.exploded .pieza{transform:translate(var(--tx),var(--ty))}
+.pieza .plastico,.pieza .metal,.pieza .tinta{stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round}
+.plastico{fill:var(--plastico)} .metal{fill:var(--metal)} .tinta{fill:var(--tinta)}
+.tr{fill-opacity:.55}
+.sinrelleno{fill:none}
+.pieza:hover .plastico,.pieza:hover .metal,.pieza:focus-visible .plastico,.pieza:focus-visible .metal{stroke:var(--formal);stroke-width:4}
+.pieza.sel .plastico,.pieza.sel .metal{stroke:var(--tecnico);stroke-width:4}
+.et{font:700 15px "Atkinson Hyperlegible",system-ui,sans-serif;fill:var(--ink);text-anchor:middle;opacity:0;transition:opacity .4s .35s;pointer-events:none}
+.exploded .et{opacity:1}
+.ficha{border-top:2px solid var(--ink);padding:1rem 1.2rem;min-height:9rem;background:var(--paper)}
+.ficha h3{margin:0 0 .4rem}
+.ficha dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:.25rem 1rem}
+.ficha dt{font-weight:700}
+.ficha dd{margin:0}
+@media (max-width:560px){.ficha dl{grid-template-columns:1fr}.ficha dd{margin-bottom:.4rem}}
+
+/* Pestañas / selectores */
+.tabs{display:flex;flex-wrap:wrap;border-bottom:2px solid var(--ink)}
+.tabs button{flex:1 1 auto;border:0;border-right:2px solid var(--ink);background:#fff;color:var(--ink);padding:.7rem .6rem;font:700 1rem "Atkinson Hyperlegible",system-ui,sans-serif;cursor:pointer}
+.tabs button:last-child{border-right:0}
+.tabs button:hover{background:var(--paper)}
+.tabs button[aria-pressed="true"]{background:var(--c);color:#fff}
+.vista svg{width:100%;height:auto;display:block;background:
+  linear-gradient(#EAF0FB 1px,transparent 1px),linear-gradient(90deg,#EAF0FB 1px,transparent 1px);background-size:20px 20px}
+.etiqueta{display:inline-block;font-weight:700;font-size:.9rem;padding:.1rem .6rem;border:2px solid var(--c);border-radius:99px;color:var(--c);margin-left:.4rem}
+
+/* Bloques */
+.bloque{padding:2.8rem 1.5rem 2.2rem;border-left:12px solid var(--c);border-top:2px solid var(--ink)}
+.formal{--c:var(--formal);--cbg:var(--formal-bg)}
+.tecnico{--c:var(--tecnico);--cbg:var(--tecnico-bg)}
+.funcional{--c:var(--funcional);--cbg:var(--funcional-bg)}
+.social{--c:var(--social);--cbg:var(--social-bg)}
+.bloque h2 span{background:linear-gradient(transparent 58%,var(--cbg) 58%);padding:0 .15em;margin-left:-.15em}
+.lema{font-size:1.2rem;font-weight:700;color:var(--c);margin:.8rem 0 .4rem}
+.intro{padding:2.2rem 1.5rem}
+.mapa{margin:1.2rem 0 0;padding:0;list-style:none;border:2px solid var(--ink)}
+.mapa li{border-bottom:2px solid var(--ink)}
+.mapa li:last-child{border-bottom:0}
+.mapa a{display:grid;grid-template-columns:1fr auto;gap:.2rem 1rem;padding:.7rem 1rem;border-left:12px solid var(--c);text-decoration:none;color:var(--ink)}
+.mapa a:hover{background:var(--cbg)}
+.mapa b{color:var(--c)}
+@media (max-width:560px){.mapa a{grid-template-columns:1fr}}
+
+/* Lista de preguntas con respuesta desplegable */
+.lista{margin-top:.5rem;border-top:2px solid var(--ink)}
+.lista details{border-bottom:1px solid var(--line)}
+.lista summary{cursor:pointer;list-style:none;padding:.85rem 2rem .85rem 2.5rem;position:relative;font-weight:700}
+.lista summary::-webkit-details-marker{display:none}
+.lista summary::before{content:attr(data-n);position:absolute;left:.1rem;top:.8rem;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font:700 .85rem var(--titulos)}
+.lista summary::after{content:"+";position:absolute;right:.6rem;top:.55rem;font-size:1.5rem;font-weight:400;color:var(--c)}
+.lista details[open] summary::after{content:"–"}
+.lista summary:hover{background:var(--cbg)}
+.resp{padding:0 .5rem 1rem 2.5rem}
+.resp .ej{background:var(--cbg);border-left:4px solid var(--c);padding:.7rem 1rem;margin:0}
+.herramientas{display:flex;justify-content:flex-end;margin-top:.6rem}
+.herramientas .btn{font-size:.9rem;padding:.3rem .7rem}
+
+/* Uniones y ciclo */
+.panel h4{font:700 1.2rem var(--titulos);margin:0 0 .3rem}
+.panel .ej{margin:.6rem 0 0;padding:.6rem .9rem;background:var(--cbg);border-left:4px solid var(--c)}
+.rs{display:flex;flex-wrap:wrap;gap:.5rem;margin:.8rem 0 0;padding:0;list-style:none}
+.rs li{border:2px solid var(--c);color:var(--c);font-weight:700;padding:.2rem .8rem;border-radius:99px}
+
+/* Práctica */
+.practica .tarea{border:2px solid var(--ink);padding:1rem 1.2rem;margin:1rem 0;display:grid;grid-template-columns:auto 1fr;gap:.2rem 1rem}
+.practica .tarea b.n{font:800 2rem var(--titulos);grid-row:span 2;color:var(--tecnico)}
+.practica .tarea p{margin:.1rem 0}
+.check{list-style:none;margin:0;padding:0}
+.check li{border-bottom:1px solid var(--line)}
+.check label{display:flex;gap:.8rem;padding:.6rem .3rem;cursor:pointer;align-items:flex-start}
+.check input{width:1.3rem;height:1.3rem;margin-top:.2rem;accent-color:var(--funcional);flex:none}
+.check input:checked + span{text-decoration:line-through;color:var(--soft)}
+.progreso{height:.7rem;border:2px solid var(--ink);margin:1rem 0 .3rem;background:#fff}
+.progreso div{height:100%;width:0;background:var(--funcional);transition:width .3s}
+.cta{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.2rem;align-items:center}
+.cta .btn{text-decoration:none;display:inline-block}
+.estado{font-weight:700;color:var(--funcional)}
+
+dl.glosario{margin:0}
+dl.glosario dt{font-weight:700;margin-top:.8rem}
+dl.glosario dd{margin:0}
+footer{border-top:2px solid var(--ink);padding:1.2rem 1.5rem;color:var(--soft);font-size:.95rem}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .pieza,.et,.progreso div{transition:none}
+}
+@media print{
+  .nav,.cta,.herramientas{display:none}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+<div class="hoja">
+
+<nav class="nav" aria-label="Secciones">
+  <a class="f" href="#formal">Formal</a>
+  <a class="t" href="#tecnico">Técnico</a>
+  <a class="u" href="#funcional">Funcional</a>
+  <a class="s" href="#social">Social, económico y ambiental</a>
+  <a href="#practica">Práctica</a>
+  <a class="ir" href="actividades-analisis-objetos.html">Actividades</a>
+</nav>
+
+<header class="portada">
+  <h1>Análisis de objetos</h1>
+  <p class="sub">Unidad 1 · Planificación de proyectos. Para aprender tecnología no hace falta inventar nada: basta con fijarse bien en lo que ya existe.</p>
+
+  <div class="widget" id="widgetPen">
+    <div class="barra">
+      <button class="btn p" id="btnDespiece" type="button" aria-pressed="false">Separar piezas</button>
+      <span>Toca una pieza para ver su ficha.</span>
+      <div class="leyenda" aria-label="Leyenda de materiales">
+        <span style="--sw:var(--plastico)">Plástico</span>
+        <span style="--sw:var(--metal)">Metal</span>
+        <span style="--sw:var(--tinta)">Tinta</span>
+      </div>
+    </div>
+    <svg id="pen" viewBox="0 0 900 330" role="group" aria-label="Despiece de un bolígrafo retráctil">
+      <g class="pieza" data-id="cartucho" style="--tx:230px;--ty:110px" tabindex="0" role="button" aria-label="Cartucho de tinta">
+        <rect x="116" y="116" width="463" height="28" fill="transparent"/>
+        <rect class="plastico" x="120" y="124" width="455" height="12" rx="3"/>
+        <rect class="tinta" x="128" y="127" width="290" height="6" rx="2"/>
+        <text class="et" x="347" y="168">Cartucho</text>
+      </g>
+      <g class="pieza" data-id="muelle" style="--tx:-180px;--ty:110px" tabindex="0" role="button" aria-label="Muelle">
+        <rect x="296" y="110" width="108" height="40" fill="transparent"/>
+        <path class="metal sinrelleno" d="M300 130 L306 116 L318 144 L330 116 L342 144 L354 116 L366 144 L378 116 L390 144 L400 130"/>
+        <text class="et" x="350" y="168">Muelle</text>
+      </g>
+      <g class="pieza" data-id="cuerpo" style="--tx:40px;--ty:0px" tabindex="0" role="button" aria-label="Cuerpo">
+        <rect class="plastico tr" x="100" y="106" width="330" height="48" rx="10"/>
+        <text class="et" x="265" y="180">Cuerpo</text>
+      </g>
+      <g class="pieza" data-id="cono" style="--tx:110px;--ty:0px" tabindex="0" role="button" aria-label="Cono">
+        <path class="plastico tr" d="M430 106 L520 118 Q540 122 548 128 L548 132 Q540 138 520 142 L430 154 Z"/>
+        <text class="et" x="489" y="180">Cono</text>
+      </g>
+      <g class="pieza" data-id="clip" style="--tx:130px;--ty:-70px" tabindex="0" role="button" aria-label="Clip">
+        <path class="metal" d="M150 108 V92 Q150 88 154 88 H284 Q290 88 290 94 V98 H160 V108 Z"/>
+        <text class="et" x="220" y="126">Clip</text>
+      </g>
+      <g class="pieza" data-id="pulsador" style="--tx:0px;--ty:0px" tabindex="0" role="button" aria-label="Pulsador">
+        <rect class="plastico" x="40" y="118" width="60" height="24" rx="6"/>
+        <text class="et" x="70" y="172">Pulsador</text>
+      </g>
+      <g class="pieza" data-id="punta" style="--tx:255px;--ty:110px" tabindex="0" role="button" aria-label="Punta con bola">
+        <path class="metal" d="M575 124 L600 128 A4 4 0 0 1 600 132 L575 136 Z"/>
+        <text class="et" x="590" y="168">Punta</text>
+      </g>
+    </svg>
+    <div class="ficha" id="ficha" aria-live="polite">
+      <h3>Un bolígrafo retráctil</h3>
+      <p>Este bolígrafo será nuestro objeto de ejemplo en todos los apuntes. Pulsa «Separar piezas» y elige una para ver de qué está hecha y para qué sirve.</p>
+    </div>
+  </div>
+</header>
+
+<section class="intro" id="intro">
+  <h2>Aprender con objetos que ya existen</h2>
+  <p>Un método muy eficaz para aprender tecnología es <b>estudiar objetos que ya existen</b>. Para analizar un objeto hay que hacerse preguntas, y las respuestas nos dan información útil para nuestros propios proyectos.</p>
+  <p>Se pueden mirar cuatro aspectos fundamentales. Cada uno tiene su propio análisis:</p>
+  <ul class="mapa">
+    <li style="--c:var(--formal);--cbg:var(--formal-bg)"><a href="#formal"><span>Su <b>forma</b></span><span>Análisis formal</span></a></li>
+    <li style="--c:var(--tecnico);--cbg:var(--tecnico-bg)"><a href="#tecnico"><span>Su <b>modo de fabricación</b> y cómo está construido</span><span>Análisis técnico</span></a></li>
+    <li style="--c:var(--funcional);--cbg:var(--funcional-bg)"><a href="#funcional"><span>Su <b>funcionamiento</b> y cómo se maneja</span><span>Análisis funcional</span></a></li>
+    <li style="--c:var(--social);--cbg:var(--social-bg)"><a href="#social"><span>Su <b>influencia en la sociedad</b> y el medioambiente</span><span>Análisis social, económico y ambiental</span></a></li>
+  </ul>
+  <p>También se puede estudiar el objeto <b>cuando termina su vida útil</b>: se puede reciclar, reutilizar entero o aprovechar por piezas.</p>
+  <p>En cada bloque verás las preguntas que debes responder. Ábrelas para ver <b>cómo se contestan con el bolígrafo</b>; después tú harás lo mismo con otro objeto.</p>
+</section>
+
+<!-- FORMAL -->
+<section class="bloque formal" id="formal">
+  <h2><span>Análisis formal</span></h2>
+  <p class="lema">Cómo es el objeto por fuera.</p>
+  <p>Se centra en la <b>estructura física</b>: cómo se ve, de qué partes se compone y cuánto mide. Aquí es donde más se dibuja.</p>
+
+  <h3>Las tres vistas de un objeto</h3>
+  <p>Para dibujar una pieza con precisión se usan tres vistas. Elige una y fíjate desde dónde miramos el bolígrafo.</p>
+  <div class="widget vista" id="widgetVistas" style="--c:var(--formal)"></div>
+
+  <h3>Preguntas del análisis formal</h3>
+  <div class="lista" data-bloque="formal"></div>
+  <div class="herramientas"><button class="btn" type="button" data-toggle="formal">Abrir todas</button></div>
+</section>
+
+<!-- TÉCNICO -->
+<section class="bloque tecnico" id="tecnico">
+  <h2><span>Análisis técnico</span></h2>
+  <p class="lema">Cómo está hecho y por qué funciona.</p>
+  <p>Se refiere a la <b>fabricación</b> y al <b>modo de funcionamiento</b>. Aquí puedes encontrar parecidos con otros aparatos o ideas originales para tus propios proyectos.</p>
+
+  <h3>¿Cómo se unen las piezas?</h3>
+  <p>Una de las preguntas es cómo están ensambladas las piezas entre sí. Estas son las uniones más habituales:</p>
+  <div class="widget" id="widgetUniones" style="--c:var(--tecnico);--cbg:var(--tecnico-bg)"></div>
+
+  <h3>Principios físicos: la «idea científica» que hay detrás</h3>
+  <p>Casi todo objeto aprovecha algún principio de la física. Por ejemplo: la <b>elasticidad</b> de un muelle, la <b>palanca</b> en unas tijeras, el <b>rozamiento</b> en un freno o el <b>electromagnetismo</b> en un motor eléctrico. Tu trabajo es descubrir cuál usa el objeto que analices.</p>
+
+  <h3>Preguntas del análisis técnico</h3>
+  <div class="lista" data-bloque="tecnico"></div>
+  <div class="herramientas"><button class="btn" type="button" data-toggle="tecnico">Abrir todas</button></div>
+</section>
+
+<!-- FUNCIONAL -->
+<section class="bloque funcional" id="funcional">
+  <h2><span>Análisis funcional</span></h2>
+  <p class="lema">Para qué sirve y cómo se usa.</p>
+  <p>Aborda la <b>utilidad</b> del objeto y la <b>forma de manejarlo</b>: instrucciones, mantenimiento y seguridad. Piensa como si tuvieras que escribir el manual de instrucciones para otra persona.</p>
+
+  <h3>Preguntas del análisis funcional</h3>
+  <div class="lista" data-bloque="funcional"></div>
+  <div class="herramientas"><button class="btn" type="button" data-toggle="funcional">Abrir todas</button></div>
+</section>
+
+<!-- SOCIAL -->
+<section class="bloque social" id="social">
+  <h2><span>Análisis social, económico y ambiental</span></h2>
+  <p class="lema">Qué papel tiene el objeto en nuestra vida y en el planeta.</p>
+  <p>Estudia el objeto en relación con su <b>función social</b> y con sus <b>repercusiones económicas y medioambientales</b>.</p>
+
+  <h3>El ciclo de vida de un objeto</h3>
+  <p>Un objeto no empieza cuando lo compramos ni acaba cuando lo tiramos. Pulsa cada etapa para ver qué pasa con el bolígrafo.</p>
+  <div class="widget" id="widgetCiclo" style="--c:var(--social);--cbg:var(--social-bg)"></div>
+  <ul class="rs" style="--c:var(--social)" aria-label="Las tres erres">
+    <li>Reducir: usar menos</li><li>Reutilizar: darle otra vida</li><li>Reciclar: convertirlo en material nuevo</li>
+  </ul>
+
+  <h3>Preguntas del análisis social, económico y ambiental</h3>
+  <div class="lista" data-bloque="social"></div>
+  <div class="herramientas"><button class="btn" type="button" data-toggle="social">Abrir todas</button></div>
+</section>
+
+<!-- PRÁCTICA -->
+<section class="bloque practica" id="practica" style="--c:var(--ink);--cbg:var(--paper)">
+  <h2><span>Práctica</span></h2>
+  <p>Ahora te toca a ti. Usa las preguntas de los cuatro bloques para responder estas dos tareas.</p>
+
+  <div class="tarea"><b class="n">1</b>
+    <p><b>Analiza una taladradora.</b></p>
+    <p>Contesta a las cuestiones que se plantean en cada uno de los cuatro bloques.</p></div>
+  <div class="tarea"><b class="n">2</b>
+    <p><b>La escoba y la aspiradora.</b></p>
+    <p>Los dos inventos responden a la necesidad de eliminar la suciedad del suelo. ¿En qué principios físicos se basan uno y otro? Haz un análisis formal, funcional, técnico, socioeconómico y ambiental de cada uno.</p></div>
+
+  <div class="cta">
+    <button class="btn p" type="button" id="btnPlantilla">Copiar plantilla de preguntas</button>
+    <span class="estado" id="estadoCopia" role="status"></span>
+  </div>
+  <p style="color:var(--soft);font-size:.95rem">La plantilla se copia como texto para que la pegues en tu documento y vayas respondiendo.</p>
+
+  <h3>Antes de entregar</h3>
+  <ul class="check" id="check"></ul>
+  <div class="progreso" aria-hidden="true"><div id="barra"></div></div>
+  <p id="txtProgreso" style="margin-top:.2rem;font-weight:700"></p>
+
+  <div class="cta">
+    <a class="btn p" href="actividades-analisis-objetos.html">Hacer las actividades autocorregibles</a>
+  </div>
+</section>
+
+<section class="bloque" style="--c:var(--ink);--cbg:var(--paper)">
+  <h2><span>Glosario</span></h2>
+  <dl class="glosario">
+    <dt>Despiece</dt><dd>Dibujo o montaje donde todas las piezas de un objeto aparecen separadas.</dd>
+    <dt>Planta, alzado y perfil</dt><dd>Las tres vistas principales: desde arriba, de frente y de lado.</dd>
+    <dt>Ensamblar</dt><dd>Unir las piezas entre sí para formar el objeto.</dd>
+    <dt>Dimensiones normalizadas</dt><dd>Medidas acordadas para que piezas de distintos fabricantes encajen, como el tamaño de las pilas AA.</dd>
+    <dt>Principio físico</dt><dd>Ley de la naturaleza que el objeto aprovecha para funcionar.</dd>
+    <dt>Vida útil</dt><dd>El tiempo durante el que un objeto cumple su función antes de dejar de servir.</dd>
+  </dl>
+</section>
+
+<footer>
+  Apuntes basados en la ficha «Análisis de objetos» de la unidad 1, Planificación de proyectos (Tecnología y Digitalización, 3º ESO).
+  Los dibujos son simplificados y no están a escala.
+</footer>
+</div>
+
+<noscript><p style="padding:1rem">Estos apuntes necesitan JavaScript para mostrar los contenidos interactivos.</p></noscript>
+
+<script>
+/* ---------- Utilidades ---------- */
+function h(tag, props, ...kids){
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(props||{})){
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  kids.flat().forEach(c => e.append(c instanceof Node ? c : document.createTextNode(c)));
+  return e;
+}
+/* Selector por botones: items = [{nombre, ...}], pintar(item) devuelve un nodo */
+function selector(cont, items, pintar){
+  const bar = h('div', {class:'tabs'});
+  const panel = h('div', {class:'panel'});
+  const btns = items.map((it,i) => h('button', {type:'button', 'aria-pressed':'false', onclick:() => sel(i)}, it.nombre));
+  function sel(i){
+    btns.forEach((b,j) => b.setAttribute('aria-pressed', String(j === i)));
+    panel.replaceChildren(pintar(items[i], i));
+  }
+  bar.append(...btns);
+  cont.append(bar, panel);
+  sel(0);
+}
+
+/* ---------- Despiece del bolígrafo ---------- */
+const PIEZAS = {
+  pulsador:{n:'Pulsador', m:'Plástico', f:'Se pulsa con el dedo para sacar o esconder la punta.', d:'Dentro lleva un pequeño mecanismo que «recuerda» si la punta está fuera o dentro. No lo dibujamos para simplificar.'},
+  cuerpo:{n:'Cuerpo', m:'Plástico', f:'Es lo que sujetas con la mano. Protege y mantiene en su sitio las piezas de dentro.', d:'Su forma cilíndrica es cómoda para agarrarlo.'},
+  clip:{n:'Clip', m:'Chapa de acero doblada', f:'Sujeta el bolígrafo al bolsillo o al cuaderno.', d:'Funciona como un muelle plano: se abre un poco y vuelve a su sitio.'},
+  muelle:{n:'Muelle', m:'Alambre de acero', f:'Empuja el cartucho para devolver la punta al interior.', d:'Principio físico: la elasticidad. Si lo aprietas, intenta recuperar su forma.'},
+  cartucho:{n:'Cartucho de tinta', m:'Tubo de plástico con tinta', f:'Guarda la tinta y la lleva hasta la punta.', d:'Es la pieza que se cambia cuando la tinta se acaba.'},
+  cono:{n:'Cono', m:'Plástico', f:'Guía la punta y cierra el extremo del bolígrafo.', d:'En muchos bolígrafos se enrosca al cuerpo, así que se puede desmontar.'},
+  punta:{n:'Punta con bola', m:'Latón o acero, con una bola metálica diminuta', f:'La bola gira al escribir y reparte la tinta sobre el papel.', d:'La bola mide aproximadamente 1 mm.'}
+};
+(function(){
+  const svg = document.getElementById('pen');
+  const btn = document.getElementById('btnDespiece');
+  const ficha = document.getElementById('ficha');
+  let tocado = false;
+  function setExploded(v){
+    svg.classList.toggle('exploded', v);
+    btn.setAttribute('aria-pressed', String(v));
+    btn.textContent = v ? 'Juntar piezas' : 'Separar piezas';
+  }
+  btn.addEventListener('click', () => { tocado = true; setExploded(!svg.classList.contains('exploded')); });
+  function elegir(g){
+    svg.querySelectorAll('.pieza').forEach(x => x.classList.remove('sel'));
+    g.classList.add('sel');
+    const p = PIEZAS[g.dataset.id];
+    ficha.replaceChildren(
+      h('h3', {text:p.n}),
+      h('dl', {},
+        h('dt', {text:'Material'}), h('dd', {text:p.m}),
+        h('dt', {text:'Para qué sirve'}), h('dd', {text:p.f}),
+        h('dt', {text:'Dato'}), h('dd', {text:p.d})
+      )
+    );
+  }
+  svg.querySelectorAll('.pieza').forEach(g => {
+    g.addEventListener('click', () => elegir(g));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); elegir(g); }});
+  });
+  /* Un único momento animado: al cargar, las piezas se separan solas */
+  setTimeout(() => { if (!tocado) setExploded(true); }, 1200);
+})();
+
+/* ---------- Vistas ---------- */
+(function(){
+  const DEFS = '<defs><marker id="fl" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2F5BEA"/></marker></defs>';
+  const COTA = 'stroke="#2F5BEA" stroke-width="1.5"';
+  const TXT = 'fill="#2F5BEA" font-weight="700" font-size="16" font-family="Atkinson Hyperlegible, sans-serif"';
+  const cuerpo = `
+    <g stroke="#17263F" stroke-width="2.5" stroke-linejoin="round">
+      <rect x="60" y="80" width="40" height="26" rx="5" fill="#CFDFFF"/>
+      <rect x="100" y="70" width="250" height="46" rx="8" fill="#CFDFFF"/>
+      <path d="M350 70 L420 82 Q440 86 446 93 Q440 100 420 104 L350 116 Z" fill="#CFDFFF"/>
+      <path d="M446 89 L472 91.5 Q475 93 472 94.5 L446 97 Z" fill="#E1E5EA"/>`;
+  const cotaLargo = `
+    <path d="M60 106V158M472 97V158" ${COTA} stroke-dasharray="3 3" fill="none"/>
+    <line x1="60" y1="150" x2="472" y2="150" ${COTA} marker-start="url(#fl)" marker-end="url(#fl)"/>
+    <text x="266" y="143" text-anchor="middle" ${TXT}>≈ 140 mm</text>`;
+  const cotaAlto = (t) => `
+    <path d="M352 70H512M352 116H512" ${COTA} stroke-dasharray="3 3" fill="none"/>
+    <line x1="505" y1="70" x2="505" y2="116" ${COTA} marker-start="url(#fl)" marker-end="url(#fl)"/>
+    <text x="518" y="98" ${TXT}>${t}</text>`;
+  const VISTAS = [
+    {nombre:'Alzado: de frente',
+     svg:`<svg viewBox="0 0 640 190" role="img" aria-label="Alzado del bolígrafo">${DEFS}${cuerpo}
+       <path d="M120 70 V56 Q120 52 124 52 H250 Q256 52 256 58 V62 H130 V70 Z" fill="#E1E5EA"/></g>${cotaLargo}${cotaAlto('alto ≈ 10 mm')}</svg>`,
+     txt:'<b>Alzado</b>: miras el objeto <b>de frente</b>. Ves el largo y la altura. Fíjate en que el clip se ve «de canto», sobre el cuerpo.'},
+    {nombre:'Planta: desde arriba',
+     svg:`<svg viewBox="0 0 640 190" role="img" aria-label="Planta del bolígrafo">${DEFS}${cuerpo}
+       <rect x="120" y="89" width="136" height="8" rx="3" fill="#E1E5EA"/></g>${cotaLargo}${cotaAlto('ancho ≈ 10 mm')}</svg>`,
+     txt:'<b>Planta</b>: miras el objeto <b>desde arriba</b>. Ves el largo y el ancho. Ahora el clip se ve como una tira en el centro.'},
+    {nombre:'Perfil: de lado',
+     svg:`<svg viewBox="0 0 640 190" role="img" aria-label="Perfil del bolígrafo">${DEFS}
+       <g stroke="#17263F" stroke-width="2.5" stroke-linejoin="round">
+         <circle cx="320" cy="95" r="40" fill="#CFDFFF"/>
+         <circle cx="320" cy="95" r="14" fill="#E1E5EA"/>
+         <rect x="302" y="46" width="36" height="11" rx="3" fill="#E1E5EA"/>
+       </g>
+       <path d="M280 100V166M360 100V166" ${COTA} stroke-dasharray="3 3" fill="none"/>
+       <line x1="280" y1="160" x2="360" y2="160" ${COTA} marker-start="url(#fl)" marker-end="url(#fl)"/>
+       <text x="320" y="152" text-anchor="middle" ${TXT}>≈ 10 mm</text></svg>`,
+     txt:'<b>Perfil</b>: miras el objeto <b>desde un lado</b>. Aquí lo vemos desde el extremo del pulsador, por eso aparece un círculo: el bolígrafo es cilíndrico.'}
+  ];
+  selector(document.getElementById('widgetVistas'), VISTAS, v => {
+    const d = h('div');
+    d.innerHTML = v.svg + '<p>' + v.txt + '</p><p style="color:var(--soft);font-size:.95rem">Truco: <b>planta</b> = arriba, <b>alzado</b> = delante, <b>perfil</b> = lado. Dibujo no a escala.</p>';
+    return d;
+  });
+})();
+
+/* ---------- Uniones ---------- */
+selector(document.getElementById('widgetUniones'), [
+  {nombre:'Rosca', t:'Desmontable', d:'Una pieza con rosca se enrosca en otra. Se puede abrir y cerrar muchas veces.', e:'El cono de muchos bolígrafos se enrosca al cuerpo.'},
+  {nombre:'Encaje a presión', t:'Desmontable', d:'Una pieza entra con algo de fuerza en otra y queda sujeta por rozamiento o por una pequeña pestaña.', e:'Las tapas de los rotuladores.'},
+  {nombre:'Pegado', t:'Fija', d:'Un adhesivo une las piezas. Si intentas separarlas, se rompen.', e:'Las piezas de una maqueta.'},
+  {nombre:'Remache', t:'Fija', d:'Un pasador metálico atraviesa las piezas y se aplasta por un extremo para que no se salga.', e:'Muchas mochilas, hebillas y herramientas.'},
+  {nombre:'Soldadura', t:'Fija', d:'Se funde un metal para unir dos piezas metálicas o componentes eléctricos.', e:'Los componentes de una placa electrónica.'}
+], u => {
+  const d = h('div');
+  d.append(h('h4', {}, u.nombre, h('span', {class:'etiqueta', text:u.t})), h('p', {text:u.d}), h('p', {class:'ej'}, h('b', {text:'Ejemplo: '}), u.e));
+  return d;
+});
+
+/* ---------- Ciclo de vida ---------- */
+selector(document.getElementById('widgetCiclo'), [
+  {nombre:'1 · Materias primas', t:'El plástico se fabrica a partir del petróleo y el metal se extrae de minas. Conseguirlos gasta energía y agua.'},
+  {nombre:'2 · Fabricación', t:'El plástico se funde y se inyecta en moldes; el metal se corta y se dobla. Después se montan las piezas. Se gasta energía y se generan residuos.'},
+  {nombre:'3 · Transporte y venta', t:'Viaja en camión o barco, con emisiones de CO₂, hasta papelerías, supermercados y tiendas online. Se vende suelto o en packs, con precios desde unos céntimos hasta pocos euros.'},
+  {nombre:'4 · Uso', t:'Mientras se usa casi no contamina, pero dura poco: cuando se acaba la tinta, mucha gente lo tira entero aunque el resto de piezas funcione.'},
+  {nombre:'5 · Fin de vida', t:'Mezcla plástico, metal y tinta, así que es difícil de reciclar. Se puede alargar su vida con cartuchos de recambio, o elegir modelos recargables o de plástico reciclado.'}
+], c => h('div', {}, h('h4', {text:c.nombre.slice(4)}), h('p', {text:c.t})));
+
+/* ---------- Preguntas con respuesta de ejemplo ---------- */
+const BLOQUES = [
+ {id:'formal', titulo:'Análisis formal', preguntas:[
+  {q:'Dibujo completo del objeto (en perspectiva o similar).', dibujo:true,
+   a:'Dibuja el bolígrafo entero, en perspectiva, con el clip y el pulsador. No hace falta que sea perfecto: tiene que verse bien su forma.'},
+  {q:'Despiece del objeto y dibujo de cada una de las piezas que lo componen, en perspectiva o con sus vistas correspondientes (planta, perfil y alzado).', dibujo:true,
+   a:'Separa las piezas, como en el dibujo de arriba, y dibuja cada una con sus vistas. En el bolígrafo serían siete dibujos: pulsador, cuerpo, clip, muelle, cartucho, cono y punta.'},
+  {q:'¿Qué forma exterior tiene: esférica, cónica, prismática, piramidal…?',
+   a:'Cilíndrica en el cuerpo y cónica en el extremo de la punta. Un objeto puede combinar varias formas.'},
+  {q:'¿Cuáles son sus dimensiones exteriores (altura, anchura, profundidad) en milímetros?',
+   a:'Aproximadamente 140 mm de largo y 10 mm de diámetro. Mide el tuyo con una regla para comprobarlo.'}
+ ]},
+ {id:'tecnico', titulo:'Análisis técnico', preguntas:[
+  {q:'¿Cuántas piezas componen el objeto?', a:'En nuestro despiece hay 7 piezas: pulsador, cuerpo, clip, muelle, cartucho, cono y punta. Cuenta también las pequeñas.'},
+  {q:'¿De qué material está hecha cada pieza?', a:'Pulsador, cuerpo y cono: plástico. Clip y muelle: acero. Cartucho: plástico con tinta. Punta: latón o acero con una bola metálica.'},
+  {q:'¿Cómo están ensambladas (unidas) las piezas entre sí?', a:'El cono se enrosca al cuerpo, el pulsador encaja a presión y el muelle queda apretado entre piezas, sin pegamento. Casi todo es desmontable, por eso podemos despiezarlo.'},
+  {q:'¿En qué principios físicos se basa su funcionamiento?', a:'En la elasticidad del muelle, que se comprime al pulsar y recupera su forma, y en la rodadura de la bola, que gira y arrastra la tinta sobre el papel.'},
+  {q:'¿Cómo es su proceso de fabricación?', a:'Las piezas de plástico se hacen por inyección (plástico fundido dentro de un molde). El muelle y el clip se doblan a partir de alambre y chapa de acero. Después se montan en una cadena de montaje.'},
+  {q:'¿Qué dimensiones deben estar normalizadas?', a:'El cartucho de recambio debe seguir medidas estándar para valer en distintos modelos. Es como los tornillos o las pilas AA, que se fabrican con tamaños acordados.'}
+ ]},
+ {id:'funcional', titulo:'Análisis funcional', preguntas:[
+  {q:'¿Para qué sirve?', a:'Para escribir y dibujar sobre papel dejando una línea de tinta.'},
+  {q:'¿Cómo funciona?', a:'Al pulsar, el pulsador empuja el cartucho y la punta sale. Al escribir, la bola gira y reparte la tinta. Al volver a pulsar, el muelle devuelve la punta al interior.'},
+  {q:'¿Cuáles son las instrucciones para manejarlo?', a:'1) Pulsa para sacar la punta. 2) Escribe apoyando la punta en el papel. 3) Pulsa otra vez para esconderla y guárdalo.'},
+  {q:'¿Qué problemas puede plantear su instalación?', a:'Casi no hay instalación, pero al cambiar el cartucho hay que montar las piezas en el orden correcto, con el muelle bien colocado, y enroscar el cono sin apretar de más.'},
+  {q:'¿Cómo se lleva a cabo su mantenimiento?', a:'Se cambia el cartucho cuando se acaba la tinta, se limpia la punta y se guarda con la punta dentro para que no se seque ni manche el bolsillo.'},
+  {q:'¿Qué riesgos para la seguridad de las personas implica su manejo?', a:'Pocos, pero la punta puede pinchar o manchar. Las piezas pequeñas, como el muelle o el pulsador, pueden ser peligrosas para niños pequeños. No conviene morderlo.'},
+  {q:'¿Qué otros objetos cumplen una función similar?', a:'El lápiz, la pluma estilográfica, el rotulador, el teclado o el dictado por voz.'}
+ ]},
+ {id:'social', titulo:'Análisis social, económico y ambiental', preguntas:[
+  {q:'¿Cuáles son las necesidades a las que responde el objeto?', a:'Comunicarnos por escrito, guardar ideas, hacer cuentas y firmar documentos.'},
+  {q:'¿Cómo se han satisfecho estas necesidades a lo largo de la historia?', a:'Primero con cañas y plumas de ave mojadas en tinta, después con plumas metálicas y estilográficas. El bolígrafo moderno se popularizó a mediados del siglo XX. Hoy también usamos teclados y pantallas.'},
+  {q:'¿Qué consecuencias para el medioambiente tienen su fabricación, su uso y su eliminación al final de su vida útil?', a:'Fabricación: plástico derivado del petróleo y metal de minas, con gasto de energía. Uso: casi ninguna. Eliminación: es un residuo difícil de reciclar porque mezcla materiales. Alternativas: bolígrafos recargables o de plástico reciclado.'},
+  {q:'¿Cómo se comercializa?', a:'Se vende en papelerías, supermercados, grandes superficies y tiendas online, suelto o en packs. Muchas empresas también lo regalan como publicidad.'},
+  {q:'¿Cuál es su precio aproximado de venta al público?', a:'Desde unos céntimos hasta unos pocos euros, según la marca. Para tu análisis, compara el precio en tres tiendas distintas.'}
+ ]}
+];
+document.querySelectorAll('.lista').forEach(cont => {
+  const b = BLOQUES.find(x => x.id === cont.dataset.bloque);
+  b.preguntas.forEach((p,i) => {
+    cont.append(h('details', {},
+      h('summary', {'data-n':i+1, text:p.q}),
+      h('div', {class:'resp'}, h('p', {class:'ej'}, h('b', {text:'Con el bolígrafo: '}), p.a))
+    ));
+  });
+});
+document.querySelectorAll('[data-toggle]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const ds = document.querySelectorAll('.lista[data-bloque="' + btn.dataset.toggle + '"] details');
+    const abrir = btn.textContent === 'Abrir todas';
+    ds.forEach(d => d.open = abrir);
+    btn.textContent = abrir ? 'Cerrar todas' : 'Abrir todas';
+  });
+});
+
+/* ---------- Plantilla para copiar ---------- */
+document.getElementById('btnPlantilla').addEventListener('click', async () => {
+  let t = 'ANÁLISIS DE OBJETOS\nObjeto: \nNombre y curso: \n\n';
+  BLOQUES.forEach((b,i) => {
+    t += (i+1) + '. ' + b.titulo.toUpperCase() + '\n\n';
+    b.preguntas.forEach((p,j) => {
+      t += (i+1) + '.' + (j+1) + ' ' + p.q + '\n' + (p.dibujo ? '(Inserta aquí tu dibujo o una foto)\n\n' : 'Respuesta: \n\n');
+    });
+  });
+  const aviso = document.getElementById('estadoCopia');
+  try { await navigator.clipboard.writeText(t); aviso.textContent = '¡Copiada! Ya puedes pegarla en tu documento.'; }
+  catch (e) {
+    const ta = h('textarea', {style:'position:fixed;opacity:0'}); ta.value = t; document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); aviso.textContent = '¡Copiada! Ya puedes pegarla en tu documento.'; }
+    catch (e2) { aviso.textContent = 'No se ha podido copiar. Prueba desde otro navegador.'; }
+    ta.remove();
+  }
+});
+
+/* ---------- Lista de comprobación ---------- */
+(function(){
+  const ITEMS = [
+    'He dibujado el objeto completo y su despiece.',
+    'He anotado cuántas piezas tiene, de qué material es cada una y cómo se unen.',
+    'He explicado qué principio físico usa para funcionar.',
+    'He explicado para qué sirve, cómo se maneja y cómo se mantiene.',
+    'He pensado en los riesgos al usarlo y en objetos parecidos.',
+    'He respondido sobre sus necesidades, su precio y su impacto ambiental.'
+  ];
+  const KEY = 'tyd3-analisis-objetos-check';
+  let marcados = [];
+  try { marcados = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+  const ul = document.getElementById('check');
+  function actualizar(){
+    const n = ul.querySelectorAll('input:checked').length;
+    document.getElementById('barra').style.width = (n / ITEMS.length * 100) + '%';
+    document.getElementById('txtProgreso').textContent = n === ITEMS.length ? '¡Todo revisado!' : n + ' de ' + ITEMS.length + ' revisados';
+    try { localStorage.setItem(KEY, JSON.stringify([...ul.querySelectorAll('input')].map((x,i) => x.checked ? i : -1).filter(i => i >= 0))); } catch (e) {}
+  }
+  ITEMS.forEach((t,i) => {
+    const inp = h('input', {type:'checkbox'});
+    inp.checked = marcados.includes(i);
+    inp.addEventListener('change', actualizar);
+    ul.append(h('li', {}, h('label', {}, inp, h('span', {text:t}))));
+  });
+  actualizar();
+})();
+</script>
+</body>
+</html>
